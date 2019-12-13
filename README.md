@@ -170,6 +170,8 @@
 - [6. 第六部分  Python-Flask框架](#6-第六部分--python-flask框架)
 - [7. 第七部分  Python-Django框架](#7-第七部分--python-django框架)
 - [8. 第八部分  Python-Tornado框架](#8-第八部分--python-tornado框架)
+    - [8.1 `Tornado`简介](#81-tornado简介)
+        - [8.1.1 异步和非阻塞`I/O`](#811-异步和非阻塞io)
 - [9. 第九部分  Python爬虫基础](#9-第九部分--python爬虫基础)
 - [10. 第十部分  Python-Scrapy与分布式爬虫](#10-第十部分--python-scrapy与分布式爬虫)
 
@@ -7290,6 +7292,44 @@ ubuntu@VM-0-6-ubuntu:~$ ls /bin | grep '^m'
 # 7. 第七部分  Python-Django框架
 
 # 8. 第八部分  Python-Tornado框架
+
+## 8.1 `Tornado`简介
+`Tornado`是一个`Python web`框架和异步网络库，起初由`FriendFeed`开发。通过使用非阻塞网络`I/O`，`Tornado`可以支持上万级别的连接，处理长连接、`Websockets`，和其他需要与每个用户保持长久连接的应用。
++ `Tornado`大体上可以被分为4个主要的部分：
+    - `web`框架(包括创建`web`应用的`RequestHandler`类，还有很多其他支持的类)
+    - `HTTP`的客户端和服务端实现(`HTTPServer`和`AsyncHTTPClient`)
+    - 异步网络库(`IOLoop`和`IOStream`), 为`HTTP`组件提供构建模块，也可以用来实现其他协议
+    - 协程库(`tornado.gen`)允许异步代码写的更直接而不用链式回调的方式
+`Tornado web`框架和`HTTP server`一起为`WSGI`提供了一个全栈式的选择。在`WSGI`容器(`WSGIAdapter`) 中使用`Tornado web`框架或者使用`Tornado HTTP server`作为一个其他`WSGI`框架(`WSGIContainer`)的容器，这样的组合方式都是有局限性的. 为了充分利用`Tornado`的特性，你需要一起使用`Tornado`的`web`框架和`HTTP server`。
+### 8.1.1 异步和非阻塞`I/O`
+实时`web`功能需要为每个用户提供一个多数时间被闲置的长连接，在传统的同步`web`服务器中，这意味着要为每个用户提供一个线程，当然每个线程的开销都是很昂贵的。为了尽量减少并发连接造成的开销，`Tornado`使用了一种单线程事件循环的方式。这就意味着所有的应用代码都应该是异步非阻塞的，因为在同一时间只有一个操作是有效的。
++ 阻塞：一个函数在等待某些事情的返回值的时候会被**阻塞**。函数被阻塞的原因有很多: 网络`I/O`，磁盘`I/O`，互斥锁等。
++ 异步：**异步**函数在会在完成之前返回，在应用中触发下一个动作之前通常会在后台执行一些工作(和正常的 **同步**函数在返回前就执行完所有的事情不同)。这里列举了几种风格的异步接口:
+    - 回调参数
+    - 返回一个占位符(`Future`, `Promise`, `Deferred`)
+    - 传送给一个队列
+    - 回调注册表(`POSIX`信号)
++ `Tornado`特点：
+    - 作为`Web`框架，是一个轻量级的`Web`框架，类似于另外一个`Python web`框架`web.py`，其拥有异步非阻塞`IO`的处理方式
+    - 作为`Web`服务器，`Tornado`具有较为出色的抗负载能力，官方用`Nginx`反向代理的方式部署`Tornado`和其它`Python web`框架进行比较，结果最大浏览量超过第二名近40%
++ 使用场景：
+    - 用户量大，高并发
+    - 大量的`HTTP`持久连接
+        - 使用同一个`TCP`连接来发送和接收多个`HTTP`请求/应答
+        - 对于`HTTP 1.0`，可以在请求的头部(`Header`)中添加`Connection:Keep-Alive`
+        - 对于`HTTP 1.1`，所有的连接默认都是持久连接
++ `C10K`：上米娜的高并发问题，通常用`C10K`这一概念来描述。`C10K`——`Concurrently Handling ten thousand connections`，即并发10000个连接。对于单台服务器而言，根本无法承担，而采用多台服务器分布式又意味着高昂的成本
++ 性能：`Tornado`在设计之初就考虑到了性能因素，旨在解决`C10K`问题，这样的设置是的其成为一个拥有非常性能的解决方案(服务器与框架的集合体)
++ `Tornado`与`Django`对比：
+    - `Django`：
+        - `Django`是走大而全的方向，注重的是高效开发，它最出名的是其全自动化的管理后台：只需要使用起`ORM`，做简单的对象定义，它就能自动生成数据库结构、以及全功能的管理后台
+        - `Django`提供的方便，也意味着`Django`内置的`ORM`跟框架内的其他模块耦合程度高，应用程序必须`Django`内置的`ORM`，否则就不能享受框架内提供的种种基于`ORM`的便利
+        - 特点：`session`功能、后台管理、`ORM`
+    - `Tornado`：
+        - `Tornado`走的是少而精的方向，注重的是性能优越，它最出名的是异步非阻塞的设计方式
+        - 特点：`HTTP`服务器、异步编程、`WebSockets`
+
+
 
 # 9. 第九部分  Python爬虫基础
 
